@@ -15,7 +15,6 @@ import { Modal } from './Modal/Modal';
 export default function App() {
   const [cards, setCards] = useState([]);
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(12);
   const [loading, setLoading] = useState(false);
   const [showBtn, setShowBtn] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -27,7 +26,7 @@ export default function App() {
       return;
     }
     setLoading(true);
-    FetchedCards(query, page, perPage)
+    FetchedCards(query, page)
       .then(({ hits, totalHits }) => {
         if (!hits.length) {
           Notiflix.Notify.info(
@@ -43,7 +42,7 @@ export default function App() {
       })
       .catch(console.log)
       .finally(() => setLoading(false));
-  }, [page, query, perPage]);
+  }, [page, query]);
 
   const handleSubmit = async data => {
     try {

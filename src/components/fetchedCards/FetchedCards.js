@@ -4,9 +4,7 @@ axios.defaults.baseURL = `https://pixabay.com/api/?key=${API_KEY}&image_type=pho
 
 export const FetchedCards = async (query, page, perPage) => {
   try {
-    const response = await axios.get(
-      `&q=${query}&per_page=${perPage}&page=${page}`
-    );
+    const response = await axios.get(`&q=${query}&per_page=12&page=${page}`);
     return response.data;
   } catch (error) {
     console.log(error);
