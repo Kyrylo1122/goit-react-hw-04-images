@@ -1,5 +1,5 @@
 import { LineWave } from 'react-loader-spinner';
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import Notiflix from 'notiflix';
 
 import { GlobalStyle } from './styles';
@@ -12,113 +12,85 @@ import { ImageGalleryItem } from './ImageGallery/ImageGalleryItem';
 import { LoadMoreBtn } from './Button/Button';
 import { Modal } from './Modal/Modal';
 
-class App extends Component {
-  state = {
-    cards: [],
-    query: '',
-    page: 1,
-    perPage: 12,
-    isLoading: false,
-    error: false,
-    isShownBtn: false,
-    showModal: false,
-  };
-  modalUrl = null;
-  addCards = async () => {
-    try {
-      const { page, perPage, query } = this.state;
-      const { hits, totalHits } = await FetchedCards(query, page, perPage);
-      return { hits, totalHits };
-    } catch (error) {
-      this.setState({ error });
-      console.log(error);
-    }
-  };
+export default function App() {
+  const [cards, setCards] = useState([]);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(12);
+  const [loading, setLoading] = useState(false);
+  const [showBtn, setShowBtn] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalUrl, setModalUrl] = useState(null);
+  const [query, setQuery] = useState('');
 
-  hideBtn = (hits, totalHits) => {
-    const totalPages = Math.floor(totalHits / hits.length);
-    if (this.state.page === totalPages) {
-      this.setState({ isShownBtn: false });
-    }
-  };
-  isArrayEmpty = arr => {
-    if (!arr.length) {
-      Notiflix.Notify.info(
-        `Sorry, we do not have any photos with mention ${this.state.query}`
-      );
-
-      this.setState({ isShownBtn: false });
+  useEffect(() => {
+    if (query === '') {
       return;
     }
-  };
-  handleSubmit = async data => {
+    setLoading(true);
+    FetchedCards(query, page, perPage)
+      .then(({ hits, totalHits }) => {
+        if (!hits.length) {
+          Notiflix.Notify.info(
+            `Sorry, we do not have any photos with mention ${query}`
+          );
+          setShowBtn(false);
+          return;
+        }
+        setCards(cards => [...cards, ...hits]);
+
+        const totalPages = Math.floor(totalHits / hits.length);
+        page === totalPages ? setShowBtn(false) : setShowBtn(true);
+      })
+      .catch(console.log)
+      .finally(() => setLoading(false));
+  }, [page, query, perPage]);
+
+  const handleSubmit = async data => {
     try {
       if (data.trim() === '') {
         Notiflix.Notify.info(`Please fill the field`);
         return;
       }
-      await this.setState({ query: data, cards: [], page: 1, isLoading: true });
+      setCards([]);
+      setQuery(data);
     } catch (error) {
-      this.setState({ error });
       console.log(error);
     }
-
-    const { hits, totalHits } = await this.addCards();
-
-    this.setState({ cards: [...hits], isLoading: false, isShownBtn: true });
-    this.isArrayEmpty(hits);
-    this.hideBtn(hits, totalHits);
   };
-  loadMore = async () => {
-    await this.setState(p => ({
-      page: p.page + 1,
-      isLoading: true,
-    }));
-
-    const { hits, totalHits } = await this.addCards();
-    this.setState(p => ({ cards: [...p.cards, ...hits], isLoading: false }));
-    this.hideBtn(hits, totalHits);
+  const loadMore = async () => {
+    setPage(page => page + 1);
   };
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-    }));
+  const toggleModal = () => {
+    setShowModal(state => !state);
   };
-  openModal = data => {
-    this.modalUrl = data;
-    this.toggleModal();
+  const openModal = data => {
+    setModalUrl(data);
+    toggleModal();
   };
+  return (
+    <Box>
+      <GlobalStyle />
+      <Searchbar onSubmit={handleSubmit} />
 
-  render() {
-    const { cards, isLoading, isShownBtn, showModal } = this.state;
-    return (
-      <Box>
-        <GlobalStyle />
-        <Searchbar onSubmit={this.handleSubmit} />
-
-        <ImageGallery>
-          <ImageGalleryItem cards={cards} onClick={this.openModal} />
-        </ImageGallery>
-        {!isLoading && isShownBtn && (
-          <Box display="flex" justifyContent="center" alignItems="center" p={5}>
-            <LoadMoreBtn click={this.loadMore} />
-          </Box>
-        )}
-        <Box display="flex" justifyContent="center" alignItems="center">
-          {isLoading && (
-            <LineWave
-              color="black"
-              height={110}
-              width={610}
-              ariaLabel="three-circles-rotating"
-            />
-          )}
-          {showModal && (
-            <Modal url={this.modalUrl} onClose={this.toggleModal} />
-          )}
+      <ImageGallery>
+        <ImageGalleryItem cards={cards} onClick={openModal} />
+      </ImageGallery>
+      {!loading && showBtn && (
+        <Box display="flex" justifyContent="center" alignItems="center" p={5}>
+          <LoadMoreBtn click={loadMore} />
         </Box>
+      )}
+      <Box display="flex" justifyContent="center" alignItems="center">
+        {loading && (
+          <LineWave
+            color="black"
+            height={110}
+            width={610}
+            ariaLabel="three-circles-rotating"
+          />
+        )}
+        {showModal && <Modal url={modalUrl} onClose={toggleModal} />}
       </Box>
-    );
-  }
+    </Box>
+  );
 }
-export default App;
