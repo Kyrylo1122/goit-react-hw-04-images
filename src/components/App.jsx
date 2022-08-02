@@ -76,7 +76,7 @@ export default function App() {
         <ImageGalleryItem cards={cards} onClick={openModal} />
       </ImageGallery>
       {!loading && showBtn && (
-        <Box display="flex" justifyContent="center" alignItems="center" p={5}>
+        <Box display="flex" justifyContent="center" alignItems="center" p={4}>
           <LoadMoreBtn click={loadMore} />
         </Box>
       )}
